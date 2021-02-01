@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
     // create socket
     int socketfd;
-    if ((socketfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((socketfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
     {
         perror("Error: failed to create socket.");
         exit(1);
@@ -30,7 +30,6 @@ int main(int argc, char *argv[])
     serveraddr.sin_addr.s_addr = inet_addr("192.168.218.129");
 
     bind(socketfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-    listen(socketfd, 10);
 
     printf("%s, socketfd: %d\n", "bind socket success.", socketfd);
         
@@ -44,13 +43,18 @@ int main(int argc, char *argv[])
      {
         memset(recvBuff, 0, RECV_LEN);
         len = sizeof(clientaddr);
-
-        ssize_t recvlen = recv(socketfd, recvBuff, RECV_LEN, 0);
-        if (recvlen > 0)
+        ssize_t count = recvfrom(socketfd, recvBuff, RECV_LEN, 0, (struct sockaddr *)&clientaddr, &len);
+        if (count == -1)
         {
-            printf("Recv Data: %s", recvBuff);
+            printf("Error: receive data failed.");
+            continue;
         }
-              
+         
+        printf("clint: IP:%s, PORT:%d :: %s", inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port), recvBuff);
+        printf("\n");
+        // send to data
+        char *buff = "Hello, I am Linux.";
+        sendto(socketfd, buff, strlen(buff), 0, (struct sockaddr*)&clientaddr, len);
      }
     
     // close socket
